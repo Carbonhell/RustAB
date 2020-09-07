@@ -3,9 +3,10 @@ marp: true
 backgroundColor: #3B2E2A
 color: #C8C9DB
 theme: gaia
+
 ---
-<!-- _backgroundColor: #E1E1DB -->
-<!-- _color: #262625 -->
+<!-- _backgroundColor: white -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 <style type="text/css">
     img {
   	    background-color: transparent!important;
@@ -18,17 +19,20 @@ theme: gaia
       background-color: black!important;
     }
 </style>
-
-
-# Visualizzazione di simulazioni agent-based con Rust e Amethyst
+![bg](Fondale01.bmp)
+![](#262625)
+## Visualizzazione di simulazioni agent-based con Rust e Amethyst
 By Francesco Foglia
 
 [![width:200px](https://www.rust-lang.org/logos/rust-logo-256x256.png)](https://www.rust-lang.org/) [![width:200px](https://book.amethyst.rs/stable/images/amethyst_emblem.png)](https://amethyst.rs/)
 
 ---
+<!--
+  L'obiettivo delle simulazioni agent-based è di trovare delle caratteristiche (regole) del sistema interessato in base al comportamento delle singole unità (agenti) e come interagiscono fra di loro.
+-->
 
 # Cosa sono le simulazioni agent-based?
-L'obiettivo delle simulazioni agent-based è di trovare delle caratteristiche (regole) del sistema interessato in base al comportamento delle singole unità (agenti) e come interagiscono fra di loro.
+![center](Agent-based-models.png)
 
 ---
 
@@ -37,6 +41,10 @@ L'obiettivo delle simulazioni agent-based è di trovare delle caratteristiche (r
 - Performance
 - Reliability
 - Productivity
+
+---
+
+[![width:1000px center](rust_most_loved.png)](https://insights.stackoverflow.com/survey/2020#technology-most-loved-dreaded-and-wanted-languages-loved)
 
 ---
 
@@ -52,6 +60,14 @@ Varie classi di bug vengono rimosse al compile-time (la gestione della memoria p
 
 ## Productivity
 Può sembrare difficile da usare, ma in realtà il linguaggio collabora con noi tramite errori ben definiti, una documentazione robusta e una community amichevole, assieme a Cargo, un package manager versatile e facile da usare
+
+---
+## Esempio: Arctix vs Node
+![center](https://miro.medium.com/max/875/1*QbzcnM6z6tyY-TjZt-tBCg.png)
+
+---
+
+![center](https://miro.medium.com/max/875/1*EUF0KKxTWYfuZJfvxZ7rRg.png)
 
 ---
 
