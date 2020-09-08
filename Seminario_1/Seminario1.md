@@ -19,6 +19,7 @@ theme: gaia
       background-color: black!important;
     }
 </style>
+
 ![bg](Fondale01.bmp)
 ![](#262625)
 ## Visualizzazione di simulazioni agent-based con Rust e Amethyst
@@ -68,6 +69,262 @@ Può sembrare difficile da usare, ma in realtà il linguaggio collabora con noi 
 ---
 
 ![center](https://miro.medium.com/max/875/1*EUF0KKxTWYfuZJfvxZ7rRg.png)
+
+---
+<!-- Inizio parte Multithreading -->
+
+# Rust & "Fearless Concurrency"
+Parallelizzare la computazione può migliorare significativamente le performance, ma allo stesso tempo può introdurre diverse problematiche.
+**Rust** offre la possibilità di scrivere codice parallelo sicuro, privo di **data races**, impedendo di compilare sorgenti che violerebbero queste caratteristiche.
+
+**Come?**
+Tramite le regole di **Ownership** e **Borrowing** ( e **Type Checking**!)
+
+---
+# Modelli di Multithreading
+* **1:1**
+    * ogni Thread creato corrisponde ad un Kernel Thread
+    * thread implementati dal Sistema Operativo
+* **M:N** (*Green Threading*):
+    * M User Thread su N Kernel Thread
+    * implementazione specifica del linguaggio di programmazione
+
+**Rust** adotta il modello di Multithreading 1:1, ma non preclude la possibilità di implementare il Green Threading.
+
+---
+
+```
+use std::thread;
+
+  fn main(){
+
+      let handle = thread::spawn( || {
+        println!("Ciao dal thread spawnato!");      
+      });
+
+    handle.join().unwrap();
+  }
+
+
+``` 
+Usiamo la funzione ```thread::spawn()``` per creare un nuovo thread e ci viene restituito un valore di tipo ```JoinHandle```, che ci permette di attendere la terminazione del thread creato.
+
+---
+##### Thread Safety
+```
+use std::thread;
+
+  fn main(){
+      let x=String::from("Il valore di y è:");
+      let y=5;
+
+      let handle = thread::spawn( || //ERRORE! { 
+            let stringa = format!("{} {}",x,y);
+            println!("{}",stringa);
+      });
+
+    println!("x:{}",x);
+    println!("y:{}",y); 
+    handle.join().unwrap();
+    }
+```
+
+---
+##### Thread Safety
+```
+use std::thread;
+  fn main(){
+      let x=String::from("Il valore di y è:");
+      let y=5;
+      let handle = thread::spawn( move ||{ 
+            let stringa = format!("{} {}",x,y);
+            println!("{}",stringa);
+      });
+    println!("x:{}",x); //Il compilatore segnalerà un errore su questa linea
+    println!("y:{}",y); 
+    handle.join().unwrap();
+    }
+```
+Aggiungiamo la parola ```move``` alla definizione della closure... perchè?
+
+---
+
+
+## Comunicazione fra Thread
+#### Scambio di messaggi
+Si utilizza un canale di comunicazione per scambiare dati fra diversi thread. Questo canale è diviso in due metà: un lato trasmette e l'altro riceve.
+#### Memoria Condivisa
+Thread diversi condividono simultaneamente l'accesso alle stesse locazioni di memoria.
+
+---
+
+## Scambio di Messaggi
+### ```std::sync::mpsc::channel()```
+Restituisce una tupla  ```(Sender,Receiver)```;
+Trasmettiamo dati con il valore ```Sender``` tramite il metodo ```send()```, e riceviamo con il ```Receiver``` tramite il metodo ```recv()``` (bloccante).
+
+```
+use std::sync::mpsc;
+...
+let (produttore,consumatore) = mpsc::channel();
+...
+```
+---
+## Scambio di Messaggi e Ownership
+I valori ```Sender``` e ```Receiver``` sono valori di proprietà:
+* i thread possono prenderne proprietà implicitamente
+* le variabili fuori scope vengono deallocate automaticamente
+
+Inoltre, la funzione ```send()``` prende proprietà del valore che spediamo, impedendone quindi l'utilizzo successivamente se il valore appartiene ad un tipo non primitivo.
+```
+let stringa = String::from("Stringa");
+trasmettitore.send(stringa).unwrap();
+println!("{}",stringa); //<--- Errore
+```
+---
+
+### Dal Produttore al Consumatore... (Scambio 1 a 1)
+```
+use std::sync::mpsc;
+use std::thread;
+
+  fn main(){
+    let (produttore,consumatore) = mpsc::channel();
+
+    thread::spawn( move ||{ 
+            let x=42;
+            produttore.send(x).unwrap();
+      });
+    
+    let risultato = consumatore.recv().unwrap();
+    println!("Ricevuto: {}",risultato);
+    }
+```
+
+---
+##### ...e se avessimo più di un produttore?
+###### MPSC = Multiple Producers Single Consumer
+```
+...
+let (produttore,consumatore) = mpsc::channel();
+    for i in 0..5{
+        let produttore_locale = mpsc::Sender::clone(&produttore);
+        thread::spawn( move ||{ 
+            let stringa = format!("{}{}","Ciao dal thread n.",i+1);
+            produttore_locale.send(stringa).unwrap();
+        });
+    }
+    drop(produttore);
+
+    for ricevuto in consumatore{
+        println!("{}",ricevuto);
+    }
+```
+---
+## Memoria Condivisa
+
+Rust offre le seguenti primitive per gestire più thread che lavorano sugli stessi dati:
+
+* ```Mutex<T>```(**Mut**ual **Ex**clusion) per sincronizzare gli accessi dei diversi thread
+
+
+* ```Arc<T>```(**A**tomic **R**eference **C**ounter) per gestire l'esistenza di diversi proprietari (i thread) per gli stessi dati
+
+Sia ```Mutex<T>``` che ```Arc<T>``` sono Smart Pointers.
+
+---
+
+# ```Mutex<T>```
+Struttura che permette l'accesso ai dati in mutua esclusione, tramite chiamata del metodo ```lock()```. La chiamata di questo metodo blocca il thread corrente finchè la risorsa non è disponibile.
+```
+use std::sync::Mutex;
+fn main() {
+    let m = Mutex::new(5);
+    {
+        let mut num = m.lock().unwrap();
+        *num = 6;
+    }
+    println!("m = {:?}", m);
+}
+```
+
+---
+### ```Arc<T>```
+Versione thread-safe del tipo ```Rc<T>```, che a sua volta permette ad un valore di avere più proprietari, esclusivamente in ambito single-thread. ```Arc<T>``` sfrutta operazioni atomiche per garantire la sicurezza in ambito multithread.
+
+L'idea è quella di sfruttare ```Arc<T>``` per condividere in maniera totalmente thread-safe un ```Mutex<T>``` che sincronizzerà gli accessi dei vari thread.
+
+---
+
+```
+...
+let somma = Arc::new(Mutex::new(0));
+let num_thread = 8;
+let mut handles = vec![];
+let thread_division = end/num_thread; //Calcola fin dove conterà ogni thread
+
+for _ in 0..num_thread{
+    let local_mutex = Arc::clone(&somma);
+    let handle = thread::spawn( move || {
+            let mut thread_sum = local_mutex.lock().unwrap();
+            for _ in 0..thread_division{
+                *thread_sum +=1;
+            }
+        });
+    handles.push(handle);
+}
+//Join
+//Stampa somma
+...
+```
+
+---
+### Riassumendo...
+
+* Rust garantisce (staticamente) programmi multithread thread-safe e privi di data race, semplicemente grazie alle regole di Ownership, Borrowing e Type Checking.
+* Rust non garantisce codice privo di Deadlock e Race Condition (non avrebbe senso)
+* Gran parte delle funzionalità legate al multithreading in Rust non fanno parte del linguaggio, ma di librerie, lasciando agli sviluppatori la libertà di implementare le proprie primitive multithread (es. Rayon,Shred)
+
+---
+# Rayon
+Libreria che offre funzionalità per parallelizzare il codice in maniera semplice e intuitiva:
+* Iteratori Paralleli
+* ThreadPool Customizzabili
+* Overhead poco significativo
+* Priva di data races
+
+
+---
+
+```
+fn moltiplicazione_mat(m1:&[Vec<u32>],m2:&[Vec<u32>],n:usize) -> Vec<Vec<u32>> {
+ 
+  (0..n)
+  .map(|i| {
+      (0..n)
+          .map(|j| (0..n)
+            .map(|k| m1[i][k] * m2[k][j]).sum()).collect::<Vec<u32>>()
+  }).collect::<Vec<Vec<u32>>>()
+}
+```
+Output:
+![50%](sequenziale.png)
+
+---
+
+```
+fn moltiplicazione_mat_parallelo(m1:&[Vec<u32>],m2:&[Vec<u32>],n:usize) -> Vec<Vec<u32>> {
+ 
+  (0..n).into_par_iter()
+  .map(|i| {
+      (0..n)
+          .map(|j| (0..n)
+            .map(|k| m1[i][k] * m2[k][j]).sum()).collect::<Vec<u32>>()
+  }).collect::<Vec<Vec<u32>>>()
+}
+```
+Output:
+![50%](parallelo.png)
 
 ---
 
@@ -179,6 +436,56 @@ Una delle componenti considerate fondamentali nei game engine odierni è il moto
 
 # Estensioni: Georust
 Nei framework moderni per le simulazioni ad agenti, è presente il supporto ai dati geospaziali (GIS data) per caricare l'ambiente nel quale avviene la simulazione. In Rust, esiste il supporto per le primitive geospaziali (punti, linee, poligoni), assieme ad altre librerie di supporto, ma non esiste una libreria per la visualizzazione di tali dati.
+
+---
+<!-- Inizio parte ABM -->
+
+# ABM: Agent Based Modelling
+Tecnica per realizzare modelli di sistemi complessi, al fine di simularne il comportamento.
+
+* sistemi complessi possono essere visti come un insieme di agenti o entità che interagiscono fra loro
+* approccio bottom-up
+* intuitività
+
+---
+
+# ABM: Agent Based Model
+
+Modelli utilizzati per simulare ed osservare il comportamento di un sistema complesso, tramite la simulazione di azioni e interazioni a livello locale.
+Le componenti di un **ABM** sono:
+* un insieme (anche eterogeneo) di agenti
+* regole decisionali
+* una topologia di interazione
+* relazioni
+
+Applicazioni tipiche: biologia, sociologia, meteorologia, economia...
+
+---
+
+# ABM: Agent Based Model
+Un agente del modello è un'entità **discreta** e **autonoma**.
+* assume dei comportamenti in base alle regole decisionali
+* interagisce con altri agenti, influenzandone i comportamenti
+
+Molti sistemi complessi possono essere modellati con un approccio bottom-up:
+l'interazione fra i singoli agenti dà luogo a fenomeni complessi, detti **comportamenti emergenti**.
+
+
+---
+
+
+# Il modello Boids (Birds)
+Modello costruito per simulare il volo di stormi di uccelli.
+* realizzato nel 1986, da Craig Reynolds
+* ogni agente si muove in uno spazio bidimensionale
+* ogni agente tiene conto della posizione dei suoi "vicini"
+* tre regole: **separazione, allineamento, coesione**
+
+![bg right:35% ](https://repository-images.githubusercontent.com/258305543/28971980-92d2-11ea-8a66-4d0d91c0e790)
+
+---
+
+Da aggiungere parte RustAB
 
 ---
 
