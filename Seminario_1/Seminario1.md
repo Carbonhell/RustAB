@@ -3,7 +3,7 @@ marp: true
 backgroundColor: #3B2E2A
 color: #C8C9DB
 theme: gaia
-
+paginate: true 
 ---
 <!-- _backgroundColor: white -->
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
@@ -25,7 +25,7 @@ theme: gaia
 ## Visualizzazione di simulazioni agent-based con Rust e Amethyst
 By Francesco Foglia
 
-[![width:200px](https://www.rust-lang.org/logos/rust-logo-256x256.png)](https://www.rust-lang.org/) [![width:200px](https://book.amethyst.rs/stable/images/amethyst_emblem.png)](https://amethyst.rs/)
+![width:512px](rust_amethyst.png)
 
 ---
 <!--
