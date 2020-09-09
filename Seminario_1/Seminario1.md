@@ -72,6 +72,18 @@ Può sembrare difficile da usare, ma in realtà il linguaggio collabora con noi 
 ---
 <!-- Inizio parte Multithreading -->
 
+* ## Fearless Concurrency
+
+* ## Multithreading nella libreria standard di Rust (il modulo std::thread)
+
+* ## Comunicazione fra Thread
+    * Scambio di messaggi
+    * Memoria condivisa
+
+* ## Rayon
+
+---
+
 # Rust & "Fearless Concurrency"
 Parallelizzare la computazione può migliorare significativamente le performance, ma allo stesso tempo può introdurre diverse problematiche.
 **Rust** offre la possibilità di scrivere codice parallelo sicuro, privo di **data races**, impedendo di compilare sorgenti che violerebbero queste caratteristiche.
@@ -281,12 +293,13 @@ for _ in 0..num_thread{
 ### Riassumendo...
 
 * Rust garantisce (staticamente) programmi multithread thread-safe e privi di data race, semplicemente grazie alle regole di Ownership, Borrowing e Type Checking.
-* Rust non garantisce codice privo di Deadlock e Race Condition (non avrebbe senso)
-* Gran parte delle funzionalità legate al multithreading in Rust non fanno parte del linguaggio, ma di librerie, lasciando agli sviluppatori la libertà di implementare le proprie primitive multithread (es. Rayon,Shred)
+* Rust non garantisce codice privo di Deadlock e Race Condition 
+* Gran parte delle funzionalità legate al multithreading in Rust non fanno parte del linguaggio, ma di librerie, lasciando agli sviluppatori la libertà di implementare le proprie primitive multithread
 
 ---
-# Rayon
-Libreria che offre funzionalità per parallelizzare il codice in maniera semplice e intuitiva:
+# Rayon ![bg ](rayon.png)
+
+Libreria che offre funzionalità per parallelizzare il codice in maniera semplice, intuitiva ed elegante:
 * Iteratori Paralleli
 * ThreadPool Customizzabili
 * Overhead poco significativo
@@ -295,9 +308,14 @@ Libreria che offre funzionalità per parallelizzare il codice in maniera semplic
 
 ---
 
+# Rayon
+
+![bg 75%](rayon_architecture.png)
+
+---
+
 ```rust
-fn moltiplicazione_mat(m1:&[Vec<u32>],m2:&[Vec<u32>],n:usize) -> Vec<Vec<u32>> {
- 
+fn moltiplicazione_mat(m1:&[Vec<u32>], m2:&[Vec<u32>],n:usize) -> Vec<Vec<u32>> {
   (0..n)
   .map(|i| {
       (0..n)
@@ -306,14 +324,15 @@ fn moltiplicazione_mat(m1:&[Vec<u32>],m2:&[Vec<u32>],n:usize) -> Vec<Vec<u32>> {
   }).collect::<Vec<Vec<u32>>>()
 }
 ```
+
 Output:
-![50%](sequenziale.png)
+![width:600px](sequenziale.png)
 
 ---
 
 ```rust
 fn moltiplicazione_mat_parallelo(m1:&[Vec<u32>],m2:&[Vec<u32>],n:usize) -> Vec<Vec<u32>> {
- 
+
   (0..n).into_par_iter()
   .map(|i| {
       (0..n)
@@ -323,7 +342,18 @@ fn moltiplicazione_mat_parallelo(m1:&[Vec<u32>],m2:&[Vec<u32>],n:usize) -> Vec<V
 }
 ```
 Output:
-![50%](parallelo.png)
+![width:600px](parallelo.png)
+
+---
+
+# Librerie basate su Rayon
+
+* rust-agent-based-models: https://github.com/facorread/rust-agent-based-models :
+  * Libreria per simulazioni agent-based che sfrutta un'architettura ECS basata sugli iteratori paralleli di Rayon
+
+* Amethyst: https://github.com/amethyst/amethyst :
+  * Game Engine basato su un ECS chiamato Specs (**S**pecs **P**arallel **ECS**) (https://github.com/amethyst/specs) che a sua volta sfrutta i threadpool di Rayon per parallelizzare automaticamente la computazione di sistemi.
+
 
 ---
 
@@ -572,11 +602,10 @@ In un certo senso è uno spin-off di Amethyst, molto recente (10 agosto 2020) e 
 
 ---
 <!-- Inizio parte ABM -->
-
 # ABM: Agent Based Modelling
 Tecnica per realizzare modelli di sistemi complessi, al fine di simularne il comportamento.
 
-* sistemi complessi possono essere visti come un insieme di agenti o entità che interagiscono fra loro
+* il comportamento di un sistema può essere visto come risultato delle azioni e interazioni di agenti che ne fanno parte
 * approccio bottom-up
 * intuitività
 
@@ -588,14 +617,13 @@ Modelli utilizzati per simulare ed osservare il comportamento di un sistema comp
 Le componenti di un **ABM** sono:
 * un insieme (anche eterogeneo) di agenti
 * regole decisionali
-* una topologia di interazione
 * relazioni
 
 Applicazioni tipiche: biologia, sociologia, meteorologia, economia...
 
 ---
 
-# ABM: Agent Based Model
+# Agenti
 Un agente del modello è un'entità **discreta** e **autonoma**.
 * assume dei comportamenti in base alle regole decisionali
 * interagisce con altri agenti, influenzandone i comportamenti
@@ -617,10 +645,69 @@ Modello costruito per simulare il volo di stormi di uccelli.
 ![bg right:35% ](https://repository-images.githubusercontent.com/258305543/28971980-92d2-11ea-8a66-4d0d91c0e790)
 
 ---
+# ABM e OOP
 
-Da aggiungere parte RustAB
+L'intuitività degli ABM si sposa naturalmente con il paradigma OOP.
+Un'implementazione di base potrebbe prevedere:
+* una classe Agent che rappresenta il concetto di agente del modello
+* una classe Model 
+* una classe che rappresenta l'ambiente in cui esistono gli agenti
+
 
 ---
+# Problemi negli ABM
+* Astrazione vs Realismo
+* Efficienza e ottimizzazione
+* Sincronizzazione
+
+
+---
+
+# RustAB
+Libreria ready-to-use per simulazioni agent-based realizzata in Rust:
+* ispirata a MASON (Java)
+
+* prestazioni migliori rispetto a librerie più diffuse (MASON,NetLogo)
+---
+
+## Architettura RustAB
+
+#### Agent
+Trait implementato dalle struct che vogliamo usare come agenti. Fornisce un metodo step() che racchiude la logica dell'agente.
+
+#### AgentImpl
+Struct che funziona da wrapper per gli agenti. Fornisce questi ultimi di un id e un valore booleano che rappresenta la modalità di scheduling fra due possibili scelte.
+
+
+
+---
+
+#### Location2D
+
+Trait implementabile da qualsiasi struct che ha bisogno di esporre una posizione(intesa come coppia di coordinate) in uno spazio bidimensionale. È richiesta l'implementazione di getter e setter per le coordinate.
+#### Field2D
+Matrice che permette di modellare facilmente le interazioni degli agenti con i rispettivi vicini, in uno spazio bidimensionale.
+
+
+
+---
+
+
+#### Schedule
+Oggetto che gestisce gli eventi che hanno luogo ad ogni step della simulazione. Funziona come una coda a priorità in cui  gli agenti vengono schedulati e ordinati volta per volta, in base all'istante di scheduling e ad un valore che rappresenta la priorità. 
+
+#### Priority
+Struttura che gestisce la priorità di un agente nello scheduling, offre metodi di confronto per stabilire l'ordinamento degli agenti nella coda a priorità. 
+
+
+---
+
+#### State
+Struttura che rappresenta lo stato globale della simulazione, contenente tutti i campi e le variabili.
+Deve essere accessibile dal corpo della funzione step() degli agenti, per questo motivo è definita come una variabile globale, il cui accesso è regolato da un Mutex.
+
+---
+
 
 # Perché visualizzare queste simulazioni?
 L'obiettivo delle simulazioni è quello di ricreare un sistema complesso a partire da singole unità (agenti). Tramite la visualizzazione di tale simulazione, possiamo osservare una valida riproduzione di tale sistema, e notare particolarità dell'intero sistema o di gruppi di agenti.
