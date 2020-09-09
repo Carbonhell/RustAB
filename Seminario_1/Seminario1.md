@@ -6,7 +6,6 @@ theme: gaia
 paginate: true 
 ---
 <!-- _backgroundColor: white -->
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 <style type="text/css">
     img {
   	    background-color: transparent!important;
@@ -93,7 +92,7 @@ Tramite le regole di **Ownership** e **Borrowing** ( e **Type Checking**!)
 
 ---
 
-```
+```rust
 use std::thread;
 
   fn main(){
@@ -111,7 +110,7 @@ Usiamo la funzione ```thread::spawn()``` per creare un nuovo thread e ci viene r
 
 ---
 ##### Thread Safety
-```
+```rust
 use std::thread;
 
   fn main(){
@@ -131,7 +130,7 @@ use std::thread;
 
 ---
 ##### Thread Safety
-```
+```rust
 use std::thread;
   fn main(){
       let x=String::from("Il valore di y è:");
@@ -163,7 +162,7 @@ Thread diversi condividono simultaneamente l'accesso alle stesse locazioni di me
 Restituisce una tupla  ```(Sender,Receiver)```;
 Trasmettiamo dati con il valore ```Sender``` tramite il metodo ```send()```, e riceviamo con il ```Receiver``` tramite il metodo ```recv()``` (bloccante).
 
-```
+```rust
 use std::sync::mpsc;
 ...
 let (produttore,consumatore) = mpsc::channel();
@@ -176,7 +175,7 @@ I valori ```Sender``` e ```Receiver``` sono valori di proprietà:
 * le variabili fuori scope vengono deallocate automaticamente
 
 Inoltre, la funzione ```send()``` prende proprietà del valore che spediamo, impedendone quindi l'utilizzo successivamente se il valore appartiene ad un tipo non primitivo.
-```
+```rust
 let stringa = String::from("Stringa");
 trasmettitore.send(stringa).unwrap();
 println!("{}",stringa); //<--- Errore
@@ -184,7 +183,7 @@ println!("{}",stringa); //<--- Errore
 ---
 
 ### Dal Produttore al Consumatore... (Scambio 1 a 1)
-```
+```rust
 use std::sync::mpsc;
 use std::thread;
 
@@ -204,7 +203,7 @@ use std::thread;
 ---
 ##### ...e se avessimo più di un produttore?
 ###### MPSC = Multiple Producers Single Consumer
-```
+```rust
 ...
 let (produttore,consumatore) = mpsc::channel();
     for i in 0..5{
@@ -236,7 +235,7 @@ Sia ```Mutex<T>``` che ```Arc<T>``` sono Smart Pointers.
 
 # ```Mutex<T>```
 Struttura che permette l'accesso ai dati in mutua esclusione, tramite chiamata del metodo ```lock()```. La chiamata di questo metodo blocca il thread corrente finchè la risorsa non è disponibile.
-```
+```rust
 use std::sync::Mutex;
 fn main() {
     let m = Mutex::new(5);
@@ -256,7 +255,7 @@ L'idea è quella di sfruttare ```Arc<T>``` per condividere in maniera totalmente
 
 ---
 
-```
+```rust
 ...
 let somma = Arc::new(Mutex::new(0));
 let num_thread = 8;
@@ -296,7 +295,7 @@ Libreria che offre funzionalità per parallelizzare il codice in maniera semplic
 
 ---
 
-```
+```rust
 fn moltiplicazione_mat(m1:&[Vec<u32>],m2:&[Vec<u32>],n:usize) -> Vec<Vec<u32>> {
  
   (0..n)
@@ -312,7 +311,7 @@ Output:
 
 ---
 
-```
+```rust
 fn moltiplicazione_mat_parallelo(m1:&[Vec<u32>],m2:&[Vec<u32>],n:usize) -> Vec<Vec<u32>> {
  
   (0..n).into_par_iter()
@@ -331,7 +330,7 @@ Output:
 # Rust e Game Dev
 La situazione attuale di Rust nell'ambiente del game dev si può esprimere tramite la [citazione](https://arewegameyet.rs/):
 ## "Almost. We have the blocks, bring your own glue."
-I "blocchi", ovvero le componenti, esistono e coprono la maggior parte dei bisogni di un developer di videogiochi.
+I "blocchi", ovvero le componenti, esistono e coprono la maggior parte dei bisogni di un developer di videogiochi
 
 ---
 
@@ -349,18 +348,24 @@ La scelta di un modello entità-componenti (ECS) come base della logica del gioc
 
 ---
 
+![center height:630px](bunnymark.png)
+
+---
+
 ## Modularità
 I vari moduli usati da Amethyst (rendy come renderer, basato su gfx-hal, rodio per la parte audio...) sono facilmente scambiabili con alternative facilmente integrabili
 
 ---
 
 ## Data-oriented
+<!-- Esempio: componenti di un ECS e la loro posizione nella memoria, ottimizzata per la cache locality -->
 Le entità del gioco sono semplicemente contenitori di dati, le operazioni sono relative a determinati tipi di dati (esempio: spostare una entità da un punto ad un altro) e non hanno bisogno dell'intera mole di dati rispettiva all'entità (la cache viene riempita solo con i dati che vogliamo effettivamente trattare)
 
 ---
 
 # Data-driven
-Il gioco viene strutturato in modo da lasciar decidere ai dati (per esempio, delle singole istanze di una particolare entità)
+<!-- Logica implementata in modo generico per trattare i vari tipi di dati -->
+La logica del gioco è gestita in modo astratto, come una semplice transformazione di dati. Un sistema specifica quali tipi di dati richiede e una volta forniti, li tratta e restituisce il risultato.
 
 ---
 <!-- Viral16/07/2020
@@ -383,13 +388,18 @@ As a result almost no one wants to touch rendering in amethyst.-->
 - Amethyst_core ([Specs](https://github.com/amethyst/specs), da scambiare con [Legion](https://github.com/TomGillen/legion))
 
 ---
+
+![center](philosophy_game_engine_engine.png)
+
+---
+
 <!-- 
 - State design pattern (basato su un automa a pila))
 - ECS (entità le cui caratteristiche dipendono dalle componenti che le compongono)
 - Resources (container di dati indipendenti)
 - World (container di resources)
-- System (contenente la logica del gioco, eseguiti in parallelo se possibile)
-- Dispatcher (praticamente gli scheduler dei systems. Rispettano le regole della gestione della memoria di rust, massimizzando il parallelismo)
+- System (contenente la logica del gioco eseguita ad ogni iterazione del game loop, in parallelo se possibile)
+- Dispatcher (praticamente gli scheduler dei systems. Rispettano le regole della gestione della memoria di rust, massimizzando il parallelismo: execution stages)
 - Event channel (coda di eventi broadcast per la comunicazione tra sistemi di tipo 1-N)
  -->
 # Concetti di Amethyst
@@ -403,7 +413,13 @@ As a result almost no one wants to touch rendering in amethyst.-->
 
 ---
 
-# Caratteristiche comuni con Unity
+# Confronto con Unity
+
+- ECS (gestito diversamente, ma Unity DOTS si avvicina)
+- Prefabs (structs con PrefabData, istanze = RON files)
+- Modularità (non presente in Unity, poiché è closed-source)
+
+<!--
 - Entrambi gli engines sono basati su un modello ECS, anche se nel dettaglio vengono gestiti in modo diverso (Unity: funzionalità implementate dal singolo componente, MonoBehaviour) (Amethyst: funzionalità implementare su una categoria di componenti, System)
 - Prefabs (Amethyst: structs che implementano il trait PrefabData, le singole istanze sono ron files che non hanno bisogno di ricompilazione)
 
@@ -411,17 +427,23 @@ As a result almost no one wants to touch rendering in amethyst.-->
 
 - Unity forza le proprie regole sullo sviluppatore, il quale può specificare la logica del gioco o altro, ma non può scendere nei dettagli, poiché è un game engine closed source.
 Amethyst permette all'utente di cambiare i pezzi che lo compongono, dando più potere ad esso, ma da ciò derivano anche più responsabilità e più pericoli.
+-->
 
 ---
 
-![center](philosophy_game_engine_engine.png)
+<iframe src="https://player.vimeo.com/video/332649771?muted=1" width="1100" height="600" frameborder="0" allowfullscreen></iframe>
 
 ---
 
 # Estensioni: ImGUI bindings
+<!--
 La crate dedicata all'UI è molto basilare, per questo motivo è stata realizzata un'altra crate, amethyst_imgui, per poter creare un UI basato su Dear ImGUI (C/C++), con dei binding appositi per rendere safe l'utilizzo.
 ## Perché Dear ImGUI?
 Le caratteristiche di questa libreria GUI sono: velocità, portabilità e autosufficienza (bloat-free), assieme ad uno sviluppo veloce.
+-->
+- Amethyst_UI estremamente basilare
+- Modulo secondario: Amethyst_ImGUI (Dear ImGUI, C/C++ bindings)
+- Velocità, portabilità, autosufficienza (bloat-free), sviluppo rapido
 
 ---
 
@@ -435,7 +457,118 @@ Una delle componenti considerate fondamentali nei game engine odierni è il moto
 ---
 
 # Estensioni: Georust
+
+I dati geospaziali (GIS data) sono molto usati nelle simulazioni per la creazione dell'environment.
+
+Rust ha [vari tools](https://github.com/georust) in merito, ma manca un tool per la visualizzazione.
+<!--
 Nei framework moderni per le simulazioni ad agenti, è presente il supporto ai dati geospaziali (GIS data) per caricare l'ambiente nel quale avviene la simulazione. In Rust, esiste il supporto per le primitive geospaziali (punti, linee, poligoni), assieme ad altre librerie di supporto, ma non esiste una libreria per la visualizzazione di tali dati.
+-->
+
+---
+
+# Pro e contro di Amethyst
+\+ Engine altamente parallelo e performante grazie a Specs e Rendy, a sua volta basato su gfx-hal, una API molto simile a Vulkan
+
+\+ Free e open-source (MIT/Apache 2.0)
+
+\+ Supporto al 2D e al 3D, a glTF e al caricamento di asset in parallelo
+
+---
+
+\- La parte grafica è alquanto limitata, in particolare per la visualizzazione di dati tramite grafici. ImGUI permette la creazione di soli due tipi di grafici: istogrammi e a linee, quindi potrebbe essere necessario l'utilizzo di una libreria dedicata, come [Plotters](https://github.com/38/plotters)
+
+\- La visualizzazione di dati GIS va fatta manualmente e la parte di grafica 2D è limitata al semplice rendering di sprites. Disegnare linee o altre primitive in modo dinamico sembra possibile solo tramite un componente di debug o attraverso amethyst-rendy, ovvero tramite shaders
+
+---
+
+\- Mancanza di features fondamentali e instabilità di quelle esistenti, come ad esempio lo switch del renderer (che, a cose fatte, sembra non essere stata una decisione giusta) che ha quasi fermato il progetto, o l'inattività di crates fondamentali come quella dedicata alla fisica, oltre al recente cambiamento della crate alla base dell'ECS ([Specs->Legion](https://csherratt.github.io/blog/posts/specs-and-legion/))
+
+<!--
+\- L'unico adattatore per un motore fisico esistente (specs-physics) sembra essere inattivo, la causa potrebbe essere lo switch dell'ECS. (Ultimo commit: 4 maggio, dipendenza nphysics vecchia di 3 versioni)
+-->
+
+\- Ancora molto lavoro da fare per arrivare ad una versione realmente competitiva con gli engine attuali
+
+---
+
+## Esempi
+```rust
+let app_root = application_root_dir()?;
+let resources = app_root.join("resources");
+let display_config = resources.join("display_config.ron");
+let game_data = GameDataBuilder::default()
+    .with_bundle(
+            RenderingBundle::<DefaultBackend>::new()
+                .with_plugin(
+                    RenderToWindow::from_config_path(display_config)?
+                        .with_clear([1, 1, 1, 1]),
+                )
+                .with_plugin(RenderDebugLines::default())
+                .with_plugin(RenderFlat2D::default())
+                .with_plugin(RenderImgui::<amethyst::input::StringBindings>::default()),
+        )?;
+let mut game = Application::new(resources, state::MyState, game_data)?;
+game.run();
+```
+
+---
+
+##### Stato
+```rust
+pub struct MyState;
+impl SimpleState for MyState {
+  fn on_start(&mut self, data: StateData<'_, GameData<'_, '_>>) {
+        let world = data.world;
+        let dimensions = (*world.read_resource::<ScreenDimensions>()).clone();
+        init_camera(world, &dimensions);
+        world.register::<DebugLinesComponent>();
+        let mut debug_lines_component: DebugLinesComponent = DebugLinesComponent::new();
+        debug_lines_component.add_line(
+          Point3::new(100. + dimensions.width() * 0.5,100. + dimensions.height() * 0.5,0.),
+          Point3::new(200. + dimensions.width() * 0.5,200. + dimensions.height() * 0.5,0.),
+          Srgba::new(1., 0., 0., 1.));
+        world
+            .create_entity()
+            .with(debug_lines_component)
+            .build();
+  }
+}
+```
+
+---
+
+##### Caricamento di una icona
+```rust
+let loader = world.read_resource::<Loader>();
+let texture_handle = {
+  let texture_storage = world.read_resource::<AssetStorage<Texture>>();
+  loader.load("texture/spritesheet.png", ImageFormat::default(), (),
+              &texture_storage,
+  )
+};
+let sprite_sheet_store = world.read_resource::<AssetStorage<SpriteSheet>>();
+let sprite_render = SpriteRender::new(
+  loader.load("texture/spritesheet.ron", SpriteSheetFormat(texture_handle),
+    (), &sprite_sheet_store,
+  )
+,0);
+world.create_entity()
+    .with(sprite_render.clone())
+    .build();
+```
+
+---
+
+# Altri game engines in Rust
+Purtroppo, in ambito game dev siamo ancora agli stadi iniziali. Però, ci sono molti tentativi atti a produrre un valido game engine che può contrastare i giganti quali Unity e Unreal Engine.
+
+---
+
+
+![](bevy_logo_dark.svg)
+
+In un certo senso è uno spin-off di Amethyst, molto recente (10 agosto 2020) e con obiettivi specifici che possono essere riassunti in due parole: user experience. Si differenzia per la scelta di ottimizzare i tempi di compilazione (famoso punto debole di Rust), l'uso di un renderer diverso (Wgpu, molto più semplice di Rendy) e un focus sull'UI (l'obiettivo è di unificare UI dei giochi con l'UI dell'editor). Attualmente gli sviluppatori di Bevy collaborano con quelli di Amethyst fortunatamente.
 
 ---
 <!-- Inizio parte ABM -->
@@ -498,100 +631,12 @@ Inoltre, la visualizzazione rende anche la simulazione più semplice da capire, 
 
 ![width:400px](masonflockers.gif) ![width:400px](masonantforaging.gif)
 
----
-
-# Strumenti attualmente esistenti
-- MASON:
-  - Java (Core / Models)
-  - MVC
-  - Single core, multiple threads
-- NetLogo:
-  - Scala->Java (Core); NetLogo (Models)
-  - Single core, single thread
-
----
-COMPLETARE?
-# Vantaggi rispetto ai framework esistenti
-
-RustAB, grazie al parallelismo offerto da Rust e Amethyst, può sfruttare al massimo i vari core a disposizione.
-
-
----
-
-# Pro e contro di Amethyst
-\+ Engine altamente parallelo e performante grazie a Specs e Rendy, a sua volta basato su gfx-hal, una API molto simile a Vulkan che permette di usare come backend tutte le piattaforme più importanti
-
-\+ Free e open-source (MIT/Apache 2.0)
-
-\+ Supporto al 2D e al 3D, a glTF e al caricamento di asset in parallelo.
-
----
-
-\- La parte grafica è alquanto limitata, in particolare per la visualizzazione di dati tramite grafici. ImGUI permette la creazione di soli due tipi di grafici: istogrammi e a linee, quindi potrebbe essere necessario l'utilizzo di una libreria dedicata, come [Plotters](https://github.com/38/plotters).
-
-\- La visualizzazione di dati GIS va fatta manualmente e la parte di grafica 2D è limitata al semplice rendering di sprites. Disegnare linee o altre primitive in modo dinamico sembra possibile solo tramite un componente di debug o attraverso amethyst-rendy, ovvero direttamente tramite le API del renderer.
-
----
-
-\- Mancanza di features fondamentali e instabilità di quelle esistenti, come ad esempio lo switch del renderer (che, a cose fatte, sembra non essere stata una decisione giusta) che ha quasi fermato il progetto, o l'inattività di crates fondamentali come quella dedicata alla fisica, oltre al recente cambiamento della crate alla base dell'ECS (Specs->Legion)
-
-\- L'unico adattatore per un motore fisico esistente (specs-physics) sembra essere inattivo, la causa potrebbe essere lo switch dell'ECS. (Ultimo commit: 4 maggio, dipendenza nphysics vecchia di 3 versioni)
-
-\- Ancora molto lavoro da fare per arrivare ad una versione realmente competitiva con gli engine attuali
-
----
-
-# Esempi di giochi basati su Amethyst
-#### Space Menace https://github.com/amethyst/space-menace
-![](https://github.com/amethyst/space-menace/raw/master/demo.gif)
-
----
-
-#### Dwarf seeks fortune
-![](https://github.com/amethyst/dwarf_seeks_fortune/raw/master/docs/screenshots/gameplay.gif)
-
----
-
-Esempi di codice rust-amethyst per la creazione di gadget grafici basilari (bottoni etc, la lista in info.txt)
-
-# Esempi di codice
-##### "Hello world" di Amethyst
-```rust
-let app_root = application_root_dir()?;
-let resources = app_root.join("resources");
-let game_data = GameDataBuilder::default();
-let mut game = Application::new(resources, state::MyState, game_data)?;
-game.run();
-```
-
----
-
-# Esempi di codice
-##### Stato
-```rust
-pub struct MyState;
-impl SimpleState for MyState {}
-```
-
----
-
-# Altri game engines in Rust
-Purtroppo, in ambito game dev siamo ancora agli stadi iniziali. Però, ci sono molti tentativi atti a produrre un valido game engine che può contrastare i giganti quali Unity e Unreal Engine.
-
----
-
-# Bevy Engine
-In un certo senso è uno spin-off di Amethyst, molto recente (10 agosto 2020) e con obiettivi specifici che possono essere riassunti in due parole: user experience. Si differenzia per la scelta di ottimizzare i tempi di compilazione (famoso punto debole di Rust), l'uso di un renderer diverso (Wgpu, molto più semplice di Rendy) e un focus sull'UI (l'obiettivo è di unificare UI dei giochi con l'UI dell'editor). Attualmente gli sviluppatori di Bevy collaborano con quelli di Amethyst fortunatamente.
-
----
-
-
 
 ---
 
 # Rust AB Visualization
 
-Lo sviluppo del framework atto alla visualizzazione segue un processo simile a quello implementato da MASON, adattandolo però all'ambiente basato su entità e componenti.
+Lo sviluppo del framework atto alla visualizzazione può seguire un processo simile a quello implementato da MASON, adattandolo però all'ambiente basato su entità e componenti.
 
 ---
 
@@ -602,7 +647,7 @@ L'idea di base è quella di usare questo framework come plug-in con una interfac
 ---
 
 # Requisiti lato modellatore
-Lo sviluppatore del modello aggiunge delle specifiche chiamate nel codice del suo modello, specificando in che modo le varie componenti vanno visualizzate. Inoltre, la comunicazione fra simulazione e visualizzazione è bidirezionale ma ben separata: tramite un UI, deve essere possibile lanciare degli eventi con dati specifici per aggiornare i dati della simulazione.
+Lo sviluppatore del modello aggiunge delle specifiche chiamate nel codice del suo modello, specificando in che modo le varie componenti vanno visualizzate. Inoltre, la comunicazione fra simulazione e visualizzazione va resa bidirezionale ma ben separata: tramite un UI, deve essere possibile lanciare degli eventi con dati specifici per aggiornare i dati della simulazione.
 
 ---
 
@@ -634,11 +679,6 @@ https://github.com/facorread/rust-agent-based-models
 - Implementazione iniziale POC tramite le librerie scelte per visualizzare una semplice simulazione (Flockers)
 
 - Creazione di un semplice inspector per le operazioni base sulla simulazione (start/stop/pause, modifica attributi di agenti, modifica attributi globali)
-
----
-
-# Medio termine
-?
 
 ---
 
