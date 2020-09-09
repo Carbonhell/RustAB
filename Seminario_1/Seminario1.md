@@ -297,7 +297,7 @@ for _ in 0..num_thread{
 * Gran parte delle funzionalità legate al multithreading in Rust non fanno parte del linguaggio, ma di librerie, lasciando agli sviluppatori la libertà di implementare le proprie primitive multithread
 
 ---
-<h1 style="margin-bottom:-50px;"><img src="rayon.png" style="vertical-align:middle; ">Rayon </h1> 
+# Rayon ![bg ](rayon.png)
 
 Libreria che offre funzionalità per parallelizzare il codice in maniera semplice, intuitiva ed elegante:
 * Iteratori Paralleli
@@ -310,9 +310,7 @@ Libreria che offre funzionalità per parallelizzare il codice in maniera semplic
 
 # Rayon
 
-<div style="width:100%; display:inline-block; line-height:120px; height:120px; margin:auto; background:#5588A9; text-align:center; vertical-align:middle;  color:white;"> Iteratori Paralleli</div>
-<div style="width:100%; display:inline-block; height:200px; margin:auto; background:#335588; text-align:center;  color:white;"> <div style="margin-top:50px">rayon::join(task_a,task_b)</div><div>Potential Parallelism</div></div>
-<div style="width:100%; display:inline-block; height:180px; margin:auto; background:#113344; text-align:center;   color:white;"> <div style="margin-top:50px">Threadpool</div><div>Work-stealing</div></div>
+![bg 75%](rayon_architecture.png)
 
 ---
 
@@ -604,11 +602,10 @@ In un certo senso è uno spin-off di Amethyst, molto recente (10 agosto 2020) e 
 
 ---
 <!-- Inizio parte ABM -->
-
 # ABM: Agent Based Modelling
 Tecnica per realizzare modelli di sistemi complessi, al fine di simularne il comportamento.
 
-* sistemi complessi possono essere visti come un insieme di agenti o entità che interagiscono fra loro
+* il comportamento di un sistema può essere visto come risultato delle azioni e interazioni di agenti che ne fanno parte
 * approccio bottom-up
 * intuitività
 
@@ -620,7 +617,6 @@ Modelli utilizzati per simulare ed osservare il comportamento di un sistema comp
 Le componenti di un **ABM** sono:
 * un insieme (anche eterogeneo) di agenti
 * regole decisionali
-* una topologia di interazione
 * relazioni
 
 Applicazioni tipiche: biologia, sociologia, meteorologia, economia...
