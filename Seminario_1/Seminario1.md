@@ -737,6 +737,19 @@ Lo sviluppo del framework atto alla visualizzazione può seguire un processo sim
 
 ---
 
+## Perché Amethyst? ([Amethyst](https://github.com/Carbonhell/amethyst-bunnymark) vs [MASON](https://github.com/Carbonhell/MASONBunnyMark))
+<iframe style="width:100%; margin: 0 auto" height="550" src="https://embed.chartblocks.com/1.0/?c=5f61df8d3ba0f6b00d73a254&t=14707d8ecdf0fd4" frameBorder="0"></iframe>
+
+---
+
+![center width:1000px](masonbunnymark.png)
+
+---
+
+![center width:1000px](bunnymark150klaptop.png)
+
+---
+
 # Architettura
 
 L'idea di base è quella di usare questo framework come plug-in con una interfaccia ben definita per gestire i vari tipi di eventi della simulazione (step, interazione fra agenti...)
