@@ -21,8 +21,8 @@ paginate: true
 
 ![bg](Fondale01.bmp)
 ![](#262625)
-## Visualizzazione di simulazioni agent-based con Rust e Amethyst
-By Francesco Foglia
+## ABM in Rust: Parallelismo e Visualizzazione
+By Francesco Foglia & Pasquale Caramante
 
 ![width:512px](rust_amethyst.png)
 
@@ -482,7 +482,8 @@ Le caratteristiche di questa libreria GUI sono: velocità, portabilità e autosu
 ---
 
 # Estensioni: specs_physics
-Una delle componenti considerate fondamentali nei game engine odierni è il motore fisico. Amethyst non ne ha uno di base, ma esiste questa crate che adatta il motore fisico più popolare e non basato su bindings, nphysics https://nphysics.org/
+Una delle componenti considerate fondamentali nei game engine odierni è il motore fisico. Amethyst non ne ha uno di base, ma questa crate adatta il motore fisico più popolare e non basato su bindings, nphysics https://nphysics.org/
+![center](logo_nphysics_full.svg)
 
 ---
 
@@ -491,6 +492,8 @@ Una delle componenti considerate fondamentali nei game engine odierni è il moto
 I dati geospaziali (GIS data) sono molto usati nelle simulazioni per la creazione dell'environment.
 
 Rust ha [vari tools](https://github.com/georust) in merito, ma manca un tool per la visualizzazione.
+
+![center](georust.png)
 <!--
 Nei framework moderni per le simulazioni ad agenti, è presente il supporto ai dati geospaziali (GIS data) per caricare l'ambiente nel quale avviene la simulazione. In Rust, esiste il supporto per le primitive geospaziali (punti, linee, poligoni), assieme ad altre librerie di supporto, ma non esiste una libreria per la visualizzazione di tali dati.
 -->
@@ -512,7 +515,7 @@ Nei framework moderni per le simulazioni ad agenti, è presente il supporto ai d
 
 ---
 
-\- Mancanza di features fondamentali e instabilità di quelle esistenti, come ad esempio lo switch del renderer (che, a cose fatte, sembra non essere stata una decisione giusta) che ha quasi fermato il progetto, o l'inattività di crates fondamentali come quella dedicata alla fisica, oltre al recente cambiamento della crate alla base dell'ECS ([Specs->Legion](https://csherratt.github.io/blog/posts/specs-and-legion/))
+\- Mancanza di features fondamentali e instabilità di quelle esistenti, come ad esempio lo switch del renderer che ha quasi fermato il progetto, o l'inattività di crates fondamentali come quella dedicata alla fisica, oltre al recente cambiamento della crate alla base dell'ECS ([Specs->Legion](https://csherratt.github.io/blog/posts/specs-and-legion/))
 
 <!--
 \- L'unico adattatore per un motore fisico esistente (specs-physics) sembra essere inattivo, la causa potrebbe essere lo switch dell'ECS. (Ultimo commit: 4 maggio, dipendenza nphysics vecchia di 3 versioni)
@@ -596,11 +599,18 @@ Purtroppo, in ambito game dev siamo ancora agli stadi iniziali. Però, ci sono m
 ---
 
 
-![](bevy_logo_dark.svg)
+![center](bevy_logo_dark.svg)
 
 In un certo senso è uno spin-off di Amethyst, molto recente (10 agosto 2020) e con obiettivi specifici che possono essere riassunti in due parole: user experience. Si differenzia per la scelta di ottimizzare i tempi di compilazione (famoso punto debole di Rust), l'uso di un renderer diverso (Wgpu, molto più semplice di Rendy) e un focus sull'UI (l'obiettivo è di unificare UI dei giochi con l'UI dell'editor). Attualmente gli sviluppatori di Bevy collaborano con quelli di Amethyst fortunatamente.
 
 ---
+
+![center](ggez-logo-maroon-full.svg)
+
+Il game engine ggez è leggero, cross-platform e si basa sulle ideologie di [LÖVE](https://love2d.org/), in particolare per la sua semplicità. È per lo sviluppo di giochi 2D ed è preferito rispetto ad Amethyst per il mondo 2D.
+
+---
+
 <!-- Inizio parte ABM -->
 # ABM: Agent Based Modelling
 Tecnica per realizzare modelli di sistemi complessi, al fine di simularne il comportamento.
@@ -727,6 +737,19 @@ Lo sviluppo del framework atto alla visualizzazione può seguire un processo sim
 
 ---
 
+## Perché Amethyst? ([Amethyst](https://github.com/Carbonhell/amethyst-bunnymark) vs [MASON](https://github.com/Carbonhell/MASONBunnyMark))
+<iframe style="width:100%; margin: 0 auto" height="550" src="https://embed.chartblocks.com/1.0/?c=5f61df8d3ba0f6b00d73a254&t=14707d8ecdf0fd4" frameBorder="0"></iframe>
+
+---
+
+![center width:1000px](masonbunnymark.png)
+
+---
+
+![center width:1000px](bunnymark150klaptop.png)
+
+---
+
 # Architettura
 
 L'idea di base è quella di usare questo framework come plug-in con una interfaccia ben definita per gestire i vari tipi di eventi della simulazione (step, interazione fra agenti...)
@@ -755,9 +778,18 @@ Lo sviluppatore del modello aggiunge delle specifiche chiamate nel codice del su
 - Mappa creata a partire da dati GIS (quindi una simile integrazione è possibile, ma non semplice)
 
 ---
-DA STUDIARE
-# Rust agent based models
-https://github.com/facorread/rust-agent-based-models
+
+# EpiRust: ([Abstract](https://www.researchgate.net/profile/Jayanta_Kshirsagar/publication/343987917_EasyChair_Preprint_EPIRUST_TOWARDS_A_FRAMEWORK_FOR_LARGE-SCALE_AGENT-BASED_EPIDEMIOLOGICAL_SIMULATIONS_USING_RUST_LANGUAGE_EpiRust_Towards_A_Framework_For_Large-scale_Agent-based_Epidemiological_Simul/links/5f4cacbc299bf13c506412bf/EasyChair-Preprint-EPIRUST-TOWARDS-A-FRAMEWORK-FOR-LARGE-SCALE-AGENT-BASED-EPIDEMIOLOGICAL-SIMULATIONS-USING-RUST-LANGUAGE-EpiRust-Towards-A-Framework-For-Large-scale-Agent-based-Epidemiological-Simul.pdf))
+https://github.com/thoughtworks/epirust/tree/sims2020
+- Modello ad agenti di tipo epidemiologico sviluppato interamente in Rust a causa delle scarse prestazioni con altri framework
+- Gli [agenti](https://github.com/thoughtworks/epirust/blob/sims2020/engine/src/agent.rs#L71) sono i cittadini che si spostano all'interno della città (una griglia), provocando o subendo una infenzione in base alla probabilità di contatto derivante dagli spostamenti
+- Uso di [Apache Kafka](https://kafka.apache.org/), una piattaforma distribuita per la comunicazione client (visualizzazione)-server (engine)
+- Visualizzazione implementata tramite [React SPA](https://it.reactjs.org/)
+<!-- 
+https://github.com/fede1024/rust-rdkafka
+Apache kafka potrebbe essere usato per gestire la comunicazione con il mio framework di visualizzazione, in modo da renderla distribuita?
+React SPA: react ma con una singola pagina che viene ricostruita (single page application)
+-->
 
 ---
 
@@ -771,9 +803,3 @@ https://github.com/facorread/rust-agent-based-models
 
 # Lungo termine
 - Creazione di adapter specifici per framework esistenti (MASON, NetLogo) per permettere la visualizzazione di modelli già esistenti e creati ad-hoc per questi framework (tramite JNA: https://github.com/java-native-access/jna, https://github.com/drrb/java-rust-example)
-
---- 
-
-# Bibliografia:
-- NetLogo itself: Wilensky, U. 1999. NetLogo. http://ccl.northwestern.edu/netlogo/. Center for Connected Learning and Computer-Based Modeling, Northwestern University. Evanston, IL.
-- Amethyst: https://amethyst.rs/ (Questa presentazione non è affiliata in alcun modo con la Fondazione Amethyst o con qualsiasi prodotto relativo ad essi)
