@@ -72,15 +72,16 @@ Può sembrare difficile da usare, ma in realtà il linguaggio collabora con noi 
 ---
 <!-- Inizio parte Multithreading -->
 
-* ## Fearless Concurrency
+* ### Fearless Concurrency
 
-* ## Multithreading nella libreria standard di Rust (il modulo std::thread)
+* ### Multithreading nella libreria standard di Rust (il modulo std::thread)
 
-* ## Comunicazione fra Thread
+* ### Comunicazione fra Thread
     * Scambio di messaggi
     * Memoria condivisa
+* ### Crossbeam
 
-* ## Rayon
+* ### Rayon
 
 ---
 
@@ -102,46 +103,24 @@ Tramite le regole di **Ownership** e **Borrowing** ( e **Type Checking**!)
 
 **Rust** adotta il modello di Multithreading 1:1, ma non preclude la possibilità di implementare il Green Threading.
 
----
 
+---
+# Libreria Standard
 ```rust
 use std::thread;
 
-  fn main(){
+fn main(){
+    let handle = thread::spawn( || {
+      println!("Ciao dal thread spawnato!");      
+    });
 
-      let handle = thread::spawn( || {
-        println!("Ciao dal thread spawnato!");      
-      });
-
-    handle.join().unwrap();
-  }
-
-
+  handle.join().unwrap();
+}
 ``` 
 Usiamo la funzione ```thread::spawn()``` per creare un nuovo thread e ci viene restituito un valore di tipo ```JoinHandle```, che ci permette di attendere la terminazione del thread creato.
 
 ---
-##### Thread Safety
-```rust
-use std::thread;
 
-  fn main(){
-      let x=String::from("Il valore di y è:");
-      let y=5;
-
-      let handle = thread::spawn( || //ERRORE! { 
-            let stringa = format!("{} {}",x,y);
-            println!("{}",stringa);
-      });
-
-    println!("x:{}",x);
-    println!("y:{}",y); 
-    handle.join().unwrap();
-    }
-```
-
----
-##### Thread Safety
 ```rust
 use std::thread;
   fn main(){
@@ -193,27 +172,6 @@ trasmettitore.send(stringa).unwrap();
 println!("{}",stringa); //<--- Errore
 ```
 ---
-
-### Dal Produttore al Consumatore... (Scambio 1 a 1)
-```rust
-use std::sync::mpsc;
-use std::thread;
-
-  fn main(){
-    let (produttore,consumatore) = mpsc::channel();
-
-    thread::spawn( move ||{ 
-            let x=42;
-            produttore.send(x).unwrap();
-      });
-    
-    let risultato = consumatore.recv().unwrap();
-    println!("Ricevuto: {}",risultato);
-    }
-```
-
----
-##### ...e se avessimo più di un produttore?
 ###### MPSC = Multiple Producers Single Consumer
 ```rust
 ...
@@ -272,7 +230,7 @@ L'idea è quella di sfruttare ```Arc<T>``` per condividere in maniera totalmente
 let somma = Arc::new(Mutex::new(0));
 let num_thread = 8;
 let mut handles = vec![];
-let thread_division = end/num_thread; //Calcola fin dove conterà ogni thread
+let thread_division = 8000000/num_thread; //Calcola fin dove conterà ogni thread
 
 for _ in 0..num_thread{
     let local_mutex = Arc::clone(&somma);
@@ -290,27 +248,55 @@ for _ in 0..num_thread{
 ```
 
 ---
-### Riassumendo...
 
-* Rust garantisce (staticamente) programmi multithread thread-safe e privi di data race, semplicemente grazie alle regole di Ownership, Borrowing e Type Checking.
-* Rust non garantisce codice privo di Deadlock e Race Condition 
-* Gran parte delle funzionalità legate al multithreading in Rust non fanno parte del linguaggio, ma di librerie, lasciando agli sviluppatori la libertà di implementare le proprie primitive multithread
+# Crossbeam
+Offre delle alternative (anche più efficienti) agli strumenti già offerti nella libreria standard per condividere dati fra thread:
+* Atomics
+* Strutture dati lock-free
+* MPMC message-passing
+* Garbage Collecting
+* Primitive di Sincronizzazione
 
 ---
-# Rayon ![bg ](rayon.png)
+
+# Epoch-based Garbage Collecting
+Gestire la memoria in un contesto lock-free può essere complesso.
+La soluzione è un sistema di Garbage Collecting epoch-based composto da:
+* Contatore dell'epoca globale
+* Lista globale di garbage per ogni epoca
+* Un flag attivo/inattivo per ogni thread
+* Contatore dell'epoca per ogni thread
+
+---
+
+![width:1050px](bench-mpsc.png)
+
+
+---
+
+![width:1050px](bench-mpmc.png)
+
+---
+
+
+# Rayon ![bg right:50% ](rayon.png)
 
 Libreria che offre funzionalità per parallelizzare il codice in maniera semplice, intuitiva ed elegante:
 * Iteratori Paralleli
 * ThreadPool Customizzabili
 * Overhead poco significativo
-* Priva di data races
+* Priva di data races e Thread-Safe
 
 
 ---
 
 # Rayon
 
-![bg 75%](rayon_architecture.png)
+<div style="width:100%; display:inline-block; line-height:120px; height:120px; margin:auto; background:#5588A9; text-align:center; vertical-align:middle;  color:white;"> Iteratori Paralleli</div>
+<div style="width:100%; display:inline-block; height:200px; margin:auto; background:#335588; text-align:center;  color:white;"> <div style="margin-top:50px">rayon::join(task_a,task_b)</div><div>Potential Parallelism vs Guaranteed Concurrency</div></div>
+<div style="width:100%; display:inline-block; height:180px; margin:auto; background:#113344; text-align:center;   color:white;"> <div style="margin-top:50px">Threadpool</div><div>Work-stealing</div></div>
+
+
 
 ---
 
@@ -353,6 +339,18 @@ Output:
 
 * Amethyst: https://github.com/amethyst/amethyst :
   * Game Engine basato su un ECS chiamato Specs (**S**pecs **P**arallel **ECS**) (https://github.com/amethyst/specs) che a sua volta sfrutta i threadpool di Rayon per parallelizzare automaticamente la computazione di sistemi.
+
+---
+
+### Riassumendo...
+
+* Rust offre nativamente poche funzionalità legate al multithreading ma lascia agli sviluppatori la libertà di implementarle in proprio
+
+* Crossbeam per la condivisione dei dati e come alternativa efficiente a ciò che offre la libreria standard 
+
+* Rayon per parallelizzare automaticamente l'elaborazione di collezioni di dati
+
+* Tutte queste alternative condividono un obiettivo comune: semplificare la vita del programmatore;
 
 
 ---
